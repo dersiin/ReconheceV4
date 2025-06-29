@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReconheceAí - Painel de Otimização Estratégica</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #F8F9FA; color: #343a40; }
+        .gradient-bg { background: linear-gradient(135deg, #1E3A8A 0%, #2563EB 100%); }
+        .chart-container { position: relative; width: 100%; max-width: 450px; margin-left: auto; margin-right: auto; height: 280px; max-height: 350px; }
+        @media (min-width: 768px) { .chart-container { height: 350px; max-height: 400px; } }
+        .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); z-index: 40; justify-content: center; align-items: center; padding: 1rem; }
+        .modal-content { position: relative; background-color: white; padding: 0; border-radius: 0.75rem; width: 100%; max-width: 900px; height: 90vh; max-height: 700px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); animation: slide-in 0.3s ease-out; }
+        @keyframes slide-in { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .loader { width: 24px; height: 24px; border: 3px solid #FFF; border-bottom-color: transparent; border-radius: 50%; display: inline-block; box-sizing: border-box; animation: rotation 1s linear infinite; }
+        @keyframes rotation { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .approved-row { background-color: #F0FFF4; }
+        .toast { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background-color: #EF4444; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); z-index: 100; animation: fade-in-out 4s ease-in-out; }
+        @keyframes fade-in-out { 0% { opacity: 0; bottom: 0px; } 10% { opacity: 1; bottom: 20px; } 90% { opacity: 1; bottom: 20px; } 100% { opacity: 0; bottom: 0px; } }
+        .loader-small {
+            width: 16px;
+            height: 16px;
+            border: 2px solid currentColor; /* Usa a cor do texto do botão */
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            animation: rotation 1s linear infinite;
+            vertical-align: middle; /* Alinha o loader com o texto */
+            margin-right: 8px; /* Espaço entre o loader e o texto */
+        }
+        /*
+        * Estilos para o conteúdo gerado pela IA dentro do modal.
+        * O seletor #modal-body garante que esses estilos só se apliquem
+        * à área de resposta da IA.
+        */
+        #modal-body p {
+            margin-bottom: 1.5rem; /* Adiciona mais espaço entre os parágrafos */
+        }
+
+        #modal-body ul {
+            list-style-type: none; /* Remove os marcadores de bolinha padrão */
+            padding-left: 0;
+        }
+
+        #modal-body li {
+            background-color: #f7f8fa; /* Um cinza bem claro */
+            border: 1px solid #e5e7eb;  /* Borda sutil */
+            border-radius: 0.75rem;     /* Bordas arredondadas */
+            padding: 1rem;
+            margin-bottom: 0.75rem;     /* Espaço entre os itens da lista */
+            display: flex;
+            align-items: flex-start;
+        }
+
+        /* Adiciona um ícone de "check" antes de cada item da lista */
+        #modal-body li::before {
+            content: '✅';
+            margin-right: 0.75rem;
+            margin-top: 0.1rem; /* Ajuste fino para alinhamento vertical */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <header class="gradient-bg text-white shadow-lg">
+        <img src="logo-reconheceAI.png" alt="Logo ReconheceAí" class="w-24 h-24 md:w-28 md:h-28 object-contain" />
+        <div class="container mx-auto px-6 py-12 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-2">ReconheceAí</h1>
+            <p class="text-lg md:text-xl opacity-90">Transformando dados em reconhecimento inteligente de talentos.</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <section id="problema" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-4">Os Desafios Críticos do RH Atual</h2>
+            <p class="text-center max-w-3xl mx-auto mb-10 text-gray-600">As decisões de reconhecimento e remuneração são complexas e, muitas vezes, repletas de desafios que impactam diretamente a retenção de talentos e a saúde financeira da empresa. O ReconheceAí foi criado para atacar estes problemas de frente.</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-3xl mb-3 text-blue-600">🎯</div>
+                    <h3 class="font-bold text-xl mb-2">Promoções Subjetivas</h3>
+                    <p class="text-gray-600">Decisões sem critérios padronizados que geram desconfiança e percepção de injustiça na equipa.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-3xl mb-3 text-red-500">💰</div>
+                    <h3 class="font-bold text-xl mb-2">Orçamento Desperdiçado</h3>
+                    <p class="text-gray-600">Subutilização de recursos valiosos em reajustes que não maximizam o impacto na retenção de talentos estratégicos.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-3xl mb-3 text-yellow-500">🚨</div>
+                    <h3 class="font-bold text-xl mb-2">Perda de Talentos</h3>
+                    <p class="text-gray-600">Falta de previsibilidade sobre quais colaboradores críticos estão em risco de deixar a empresa, resultando em perdas inesperadas.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-3xl mb-3 text-gray-500">📊</div>
+                    <h3 class="font-bold text-xl mb-2">Falta de Transparência</h3>
+                    <p class="text-gray-600">Processos de reconhecimento que funcionam como uma "caixa-preta", dificultando a comunicação e a auditoria das decisões.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="funcionamento" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-4">Como Funciona a Nossa Solução</h2>
+             <p class="text-center max-w-3xl mx-auto mb-12 text-gray-600">O ReconheceAí transforma um processo complexo num fluxo de trabalho simples e inteligente em quatro etapas, desde a recolha de dados até à justificação transparente das decisões.</p>
+            <div class="relative">
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gray-300 -translate-y-1/2"></div>
+                <div class="grid md:grid-cols-4 gap-8 relative">
+                     <div class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-600">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl mr-4">1</div>
+                            <h3 class="font-bold text-xl">Coleta de Dados</h3>
+                        </div>
+                        <p class="text-gray-600">Utilizamos os dados estruturados que o seu RH já possui, como avaliações de desempenho, tempo de casa, cargo e histórico.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-600">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl mr-4">2</div>
+                            <h3 class="font-bold text-xl">Cálculo de Score</h3>
+                        </div>
+                        <p class="text-gray-600">O nosso algoritmo calcula um score único para cada colaborador com base em pesos customizáveis, refletindo a sua estratégia.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-600">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl mr-4">3</div>
+                            <h3 class="font-bold text-xl">Ranking e Otimização</h3>
+                        </div>
+                        <p class="text-gray-600">Geramos um ranking claro e sugerimos a distribuição otimizada do orçamento de reajustes para maximizar o impacto.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-lg shadow-lg border-t-4 border-blue-600">
+                        <div class="flex items-center mb-3">
+                            <div class="w-10 h-10 rounded-full gradient-bg text-white flex items-center justify-center font-bold text-xl mr-4">4</div>
+                            <h3 class="font-bold text-xl">IA Explicável</h3>
+                        </div>
+                        <p class="text-gray-600">A nossa IA fornece justificativas em linguagem natural para cada decisão, promovendo transparência e confiança.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="dashboard" class="bg-white p-6 md:p-8 rounded-2xl shadow-2xl mb-20">
+            <h2 class="text-3xl font-bold text-center mb-2">Painel de Otimização de Orçamento</h2>
+            <p class="text-center max-w-3xl mx-auto mb-8 text-gray-600">Defina o orçamento total da sua área, aloque um percentual para reajustes e aprove as sugestões para ver o impacto em tempo real.</p>
+            
+            <div class="mb-8 p-6 bg-gray-50 rounded-lg space-y-6">
+                <div class="grid md:grid-cols-2 gap-6 items-center">
+                    <div>
+                        <label for="total-area-budget-input" class="block font-bold text-lg mb-2 text-gray-700">Orçamento Total da Área</label>
+                        <div class="relative mt-1">
+                            <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3"><span class="text-gray-500 sm:text-lg">R$</span></div>
+                            <input type="text" id="total-area-budget-input" class="block w-full rounded-md border-gray-300 shadow-sm pl-10 pr-4 py-2 text-center text-2xl font-bold focus:border-indigo-500 focus:ring-indigo-500" value="100.000,00">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="pool-percentage-slider" class="block font-bold text-lg mb-2 text-gray-700">Percentual para Reajuste: <span id="pool-percentage-value" class="text-blue-600">5%</span></label>
+                        <input id="pool-percentage-slider" type="range" min="5" max="15" value="5" step="1" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer">
+                        <div class="text-center text-sm text-gray-500 mt-2">Pool de Reajuste: <span id="pool-budget-value" class="font-bold">R$ 5.000,00</span></div>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex justify-between mb-1">
+                        <span class="text-base font-medium text-blue-700">Pool Alocado</span>
+                        <span id="allocated-budget-text" class="text-sm font-medium text-blue-700">R$ 0,00 de R$ 5.000,00</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5">
+                        <div id="budget-progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div> <div id="bias-analysis-alert" class="hidden mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="p-4 font-semibold">Colaborador</th>
+                            <th class="p-4 font-semibold text-center">Área</th>
+                            <th class="p-4 font-semibold text-center">Score</th>
+                            <th class="p-4 font-semibold text-center">Risco de Perda</th>
+                            <th class="p-4 font-semibold text-center">Impacto da Perda</th>
+                            <th class="p-4 font-semibold text-center">Reajuste Sugerido</th>
+                            <th class="p-4 font-semibold text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ranking-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="flex justify-end mt-6 gap-4">
+                <button id="show-log-button" class="bg-gray-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors">Ver Histórico</button>
+                <button id="export-csv-button" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors">Exportar Aprovações (CSV)</button>
+            </div>
+        </section>
+        <section id="kpi-dashboard" class="mb-20">
+            <h2 class="text-3xl font-bold text-center mb-4">Dashboard Estratégico</h2>
+            <p class="text-center max-w-3xl mx-auto mb-10 text-gray-600">Monitore os principais indicadores da sua equipe e o impacto das suas decisões em tempo real.</p>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="font-bold text-xl mb-4 text-center">Uso do Pool de Reajuste</h3>
+                    <div class="h-64"><canvas id="budgetChart"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="font-bold text-xl mb-4 text-center">Distribuição de Risco da Equipe</h3>
+                    <div class="h-64"><canvas id="riskChart"></canvas></div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-lg flex flex-col justify-center items-center text-center">
+                    <h3 class="font-bold text-xl mb-4">Retenção de Talentos Críticos</h3>
+                    <p class="text-6xl font-bold text-green-600" id="retention-kpi-value">0%</p>
+                    <p class="text-gray-600 mt-2">dos colaboradores de alto impacto e alto risco tiveram o reajuste aprovado.</p>
+                </div>
+            </div>
+        </section>
+        <section id="formula" class="mt-20">
+            <div class="bg-white p-8 md:p-12 rounded-2xl shadow-2xl">
+                <div class="text-center mb-10">
+                    <h2 class="text-3xl font-bold">O Motor por Trás das Decisões</h2>
+                    <p class="max-w-3xl mx-auto mt-2 text-gray-600">A pontuação de cada colaborador é calculada através de uma fórmula ponderada. Interaja com os pesos abaixo para simular diferentes estratégias de retenção.</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-5 gap-12 items-center">
+                    
+                    <div class="lg:col-span-2 h-72 md:h-80">
+                        <canvas id="weightsChart"></canvas>
+                    </div>
+
+                    <div class="lg:col-span-3">
+                        <div class="mb-8">
+                            <label class="block font-medium text-gray-700 mb-2">Simulação de Cenário:</label>
+                            <div class="flex flex-wrap gap-2">
+                                <button id="preset-equilibrado" class="preset-button bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors text-sm">Equilibrado</button>
+                                <button id="preset-retencao" class="preset-button bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-sm">Foco em Retenção</button>
+                                <button id="preset-meritocracia" class="preset-button bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors text-sm">Meritocracia</button>
+                            </div>
+                        </div>
+                        
+                        <div id="weights-controls" class="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6">
+                            </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+    </main>
+
+    <footer class="bg-gray-800 text-white mt-20">
+        <div class="container mx-auto px-6 py-8 text-center"><p class="font-bold text-xl mb-2">ReconheceAí</p><p>Um projeto desenvolvido pela Equipa 01 no Hackathon.</p></div>
+    </footer>
+
+    <div id="toast-message" class="toast"></div>
+    
+    <div id="justification-modal" class="modal-backdrop">
+        <div class="modal-content">
+             <button id="modal-close-x-button" class="absolute top-0 right-0 mt-2 mr-2 text-gray-400 hover:text-gray-600 text-2xl font-bold z-10">&times;</button>
+            <div class="grid md:grid-cols-12 flex-grow min-h-0">
+                <div class="md:col-span-5 lg:col-span-4 bg-gray-50 p-8 flex flex-col overflow-y-auto">
+                    <h3 id="modal-title" class="text-3xl font-bold text-gray-900"></h3>
+                    <p id="modal-area" class="text-lg text-gray-600 mb-8"></p>
+                    <div id="modal-details" class="space-y-4"></div>
+                    <div class="mt-auto pt-6 flex-shrink-0"><button id="modal-close-button" class="w-full bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-opacity">Fechar</button></div>
+                </div>
+                <div class="md:col-span-7 lg:col-span-8 p-6 flex flex-col bg-white overflow-hidden">
+                     <h3 class="text-xl font-bold text-gray-800 mb-4 flex-shrink-0">Centro de Análise IA</h3>
+                     <div class="my-4 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+                        <p class="text-sm font-semibold text-gray-700 mb-3">Selecione uma análise para gerar:</p>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button data-type="recognition" class="analysis-button-new flex-1 bg-blue-100 text-blue-700 font-bold py-2 px-4 rounded-lg hover:bg-blue-200 transition-colors text-sm">💯 Reconhecimento</button>
+                            <button data-type="risk" class="analysis-button-new flex-1 bg-yellow-100 text-yellow-700 font-bold py-2 px-4 rounded-lg hover:bg-yellow-200 transition-colors text-sm">🛡️ Análise de Risco</button>
+                            <button data-type="impact" class="analysis-button-new flex-1 bg-purple-100 text-purple-700 font-bold py-2 px-4 rounded-lg hover:bg-purple-200 transition-colors text-sm">🎯 Análise de Impacto</button>
+                        </div>
+                    </div>
+                     <div id="modal-body" class="flex-grow overflow-y-auto pr-2 space-y-4 text-gray-700 bg-slate-50 p-4 rounded-lg">
+                        <p class="text-gray-500 italic">Selecione uma análise para ser gerada pela IA.</p>
+                     </div>
+                     <div id="loader-container" class="hidden flex-grow items-center justify-center p-4">
+                        <div class="loader"></div>
+                        <p class="ml-4 text-gray-500 animate-pulse">A IA está a analisar... por favor, aguarde.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // --- VARIÁVEIS DE ESTADO ---
+        let decisionLog = [];
+        let budgetChart;
+        let riskChart;
+        let rankedColaboradores = [];
+        let totalAreaBudget = 100000;
+        let poolPercentage = 5;
+        let currentPoolBudget = (totalAreaBudget * poolPercentage) / 100;
+        const initialWeights = { desempenho: 35, impactoPerda: 20, riscoPerda: 15, tempoCargo: 10, tempoCasa: 10, absenteismo: 10, sentimento: 10 };
+        let currentWeights = { ...initialWeights };
+        
+        
+        // --- ELEMENTOS DO DOM ---
+        const poolPercentageSlider = document.getElementById('pool-percentage-slider');
+        const poolPercentageValue = document.getElementById('pool-percentage-value');
+        const poolBudgetValue = document.getElementById('pool-budget-value');
+        const totalAreaBudgetInput = document.getElementById('total-area-budget-input');
+        
+        const tableBody = document.getElementById('ranking-table-body');
+        const budgetProgressBar = document.getElementById('budget-progress-bar');
+        const allocatedBudgetText = document.getElementById('allocated-budget-text');
+        const toastMessage = document.getElementById('toast-message');
+        const weightsControlsContainer = document.getElementById('weights-controls');
+        const weightsChartCtx = document.getElementById('weightsChart')?.getContext('2d');
+        let weightsChart;
+
+        const modal = document.getElementById('justification-modal');
+        const modalCloseButton = document.getElementById('modal-close-button');
+        const modalCloseXButton = document.getElementById('modal-close-x-button');
+        const modalTitle = document.getElementById('modal-title');
+        const modalArea = document.getElementById('modal-area');
+        const modalDetails = document.getElementById('modal-details');
+        const modalBody = document.getElementById('modal-body');
+        const loaderContainer = document.getElementById('loader-container');
+        
+        const exportCsvButton = document.getElementById('export-csv-button');
+        
+        // --- FUNÇÕES DE LÓGICA E RENDERIZAÇÃO ---
+        function updateBiasAnalysis() {
+            const alertContainer = document.getElementById('bias-analysis-alert');
+            const approvedColaboradores = rankedColaboradores.filter(c => c.approved);
+
+            // Só faz sentido analisar se tivermos um número mínimo de aprovações
+            if (approvedColaboradores.length < 3) {
+                alertContainer.classList.add('hidden');
+                return;
+            }
+
+            const countsByArea = {};
+            // Conta quantas aprovações existem por área
+            approvedColaboradores.forEach(c => {
+                countsByArea[c.area] = (countsByArea[c.area] || 0) + 1;
+            });
+
+            // Encontra a área com o maior número de aprovações
+            let maxCount = 0;
+            let mostFrequentArea = '';
+            for (const area in countsByArea) {
+                if (countsByArea[area] > maxCount) {
+                    maxCount = countsByArea[area];
+                    mostFrequentArea = area;
+                }
+            }
+
+            // Calcula a porcentagem de concentração
+            const concentrationPercentage = (maxCount / approvedColaboradores.length) * 100;
+
+            // Se a concentração for maior que um limite (ex: 60%), exibe o alerta
+            if (concentrationPercentage > 60) {
+                alertContainer.innerHTML = `
+                    <p class="font-bold text-yellow-800">Alerta de Possível Viés</p>
+                    <p class="text-yellow-700">Atenção: <strong>${concentrationPercentage.toFixed(0)}%</strong> dos reajustes aprovados estão concentrados na área "<strong>${mostFrequentArea}</strong>". Considere revisar a distribuição para garantir a equidade.</p>
+                `;
+                alertContainer.classList.remove('hidden');
+            } else {
+                alertContainer.classList.add('hidden');
+            }
+        }
+
+        function initializeBudgetChart() {
+            const ctx = document.getElementById('budgetChart')?.getContext('2d');
+            if (!ctx) return;
+            budgetChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Alocado', 'Disponível'],
+                    datasets: [{
+                        data: [0, 100],
+                        backgroundColor: ['#2563EB', '#E5E7EB'],
+                        borderColor: '#FFFFFF',
+                        borderWidth: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'bottom'
+                        },
+                        // --- ADICIONE ESTE BLOCO DE TOOLTIP ---
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw || 0;
+                                    // Reutilizamos a função que já temos para formatar como moeda
+                                    return formatCurrency(value);
+                                }
+                            }
+                        }
+                        // --- FIM DO BLOCO ADICIONADO ---
+                    }
+                }
+            });
+        }
+
+        function updateDashboard() {
+            if (!rankedColaboradores || rankedColaboradores.length === 0) return;
+
+            // --- Cálculo para o Gráfico de Orçamento ---
+            const allocatedBudget = rankedColaboradores.filter(c => c.approved).reduce((sum, c) => sum + (c.reajusteSugerido || 0), 0);
+            if (budgetChart) {
+                budgetChart.data.datasets[0].data = [allocatedBudget, currentPoolBudget - allocatedBudget];
+                budgetChart.update();
+            }
+
+            // --- Cálculo para o Gráfico de Risco ---
+            const riskCounts = { 'baixo': 0, 'médio': 0, 'alto': 0 };
+            rankedColaboradores.forEach(c => {
+                const risco = c.riscoPerdaTexto?.toLowerCase() || '';
+                if (risco in riskCounts) {
+                    riskCounts[risco]++;
+                }
+            });
+            if (riskChart) {
+                riskChart.data.datasets[0].data = [riskCounts.baixo, riskCounts.médio, riskCounts.alto];
+                riskChart.update();
+            }
+
+            // --- Cálculo para o KPI de Retenção ---
+            const highImpactHighRisk = rankedColaboradores.filter(c => c.impactoPerdaTexto?.toLowerCase() !== 'baixo' && c.riscoPerdaTexto?.toLowerCase() === 'alto');
+            const retainedTalents = highImpactHighRisk.filter(c => c.approved).length;
+            const retentionPercentage = highImpactHighRisk.length > 0 ? (retainedTalents / highImpactHighRisk.length) * 100 : 0;
+            document.getElementById('retention-kpi-value').textContent = `${retentionPercentage.toFixed(0)}%`;
+        }
+
+        function initializeRiskChart() {
+            const ctx = document.getElementById('riskChart')?.getContext('2d');
+            if (!ctx) return;
+            riskChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Risco Baixo', 'Risco Médio', 'Risco Alto'],
+                    datasets: [{
+                        label: 'Nº de Colaboradores',
+                        data: [0, 0, 0],
+                        backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+                        borderRadius: 4
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } }
+            });
+        }
+        /**
+        /**
+         * Salva APENAS o orçamento total no localStorage do navegador.
+         */
+        function saveStateToLocalStorage() {
+            // Usamos uma chave diferente para não confundir com o estado antigo
+            localStorage.setItem('reconheceAiBudget', totalAreaBudget);
+        }
+
+        /**
+         * Carrega APENAS o orçamento salvo do localStorage e atualiza a variável.
+         */
+        function loadStateFromLocalStorage() {
+            const savedBudget = localStorage.getItem('reconheceAiBudget');
+            // Verifica se o valor não é nulo (0 é um orçamento válido)
+            if (savedBudget !== null) {
+                totalAreaBudget = parseInt(savedBudget, 10);
+            }
+        }
+
+        /**
+         * Formata um valor numérico como moeda.
+         */
+        function formatCurrency(value) { return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`; }
+        function parseCurrency(value) { return parseFloat(value.replace(/\./g, "").replace(",", ".")) || 0; }
+        function exportToCsv(filename, rows) {
+    
+            // Verifica se há dados para exportar e exibe uma mensagem se não houver.
+    if (rows.length <= 1) { // Menor ou igual a 1 para contar apenas o cabeçalho
+        toastMessage.textContent = 'Nenhuma aprovação para exportar.';
+        toastMessage.style.backgroundColor = '#FBBF24'; // Um tom de amarelo para aviso
+        toastMessage.style.display = 'block';
+        setTimeout(() => { toastMessage.style.display = 'none'; }, 4000);
+        return;
+    }
+
+    // Processa as linhas para o formato CSV
+    const csvContent = rows.map(e => e.join(',')).join('\n');
+
+    // Cria um "Blob" que contém os dados CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // Cria um link temporário para iniciar o download
+    const link = document.createElement("a");
+    if (link.download !== undefined) { 
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+}
+        function getIndicatorBadgeClasses(value) {
+            if (!value) return 'bg-gray-100 text-gray-800';
+            const lowerValue = value.toLowerCase();
+            switch (lowerValue) {
+                case 'excepcional':
+                case 'baixo':
+                    return 'bg-green-100 text-green-800';
+                case 'acima do esperado':
+                case 'excelente':
+                    return 'bg-blue-100 text-blue-800';
+                case 'alto':
+                case 'crítico':
+                    return 'bg-red-100 text-red-800';
+                case 'médio':
+                case 'moderado':
+                    return 'bg-yellow-100 text-yellow-800';
+                case 'estratégico':
+                    return 'bg-purple-100 text-purple-800';
+                default:
+                    return 'bg-gray-100 text-gray-800';
+            }
+        }
+        function getIndicatorClass(value) {
+            if (!value) return 'text-gray-800';
+            const lowerValue = value.toLowerCase();
+            if (lowerValue === 'excepcional' || lowerValue === 'baixo') return 'text-green-600';
+            if (lowerValue === 'acima do esperado' || lowerValue === 'excelente') return 'text-blue-600';
+            if (lowerValue === 'alto') return 'text-red-600';
+            if (lowerValue === 'médio') return 'text-yellow-600';
+            if (lowerValue === 'estratégico' || lowerValue === 'crítico') return 'text-purple-600';
+            return 'text-gray-800';
+        }
+        
+        function updateBudgetContext() {
+            currentPoolBudget = (totalAreaBudget * poolPercentage) / 100;
+            poolBudgetValue.textContent = formatCurrency(currentPoolBudget);
+            poolPercentageValue.textContent = `${poolPercentage}%`;
+            const allocated = rankedColaboradores.filter(c => c.approved).reduce((sum, c) => sum + (c.reajusteSugerido || 0), 0);
+            const percentageAllocated = currentPoolBudget > 0 ? (allocated / currentPoolBudget) * 100 : 0;
+            budgetProgressBar.style.width = `${Math.min(percentageAllocated, 100)}%`;
+            allocatedBudgetText.textContent = `${formatCurrency(allocated)} de ${formatCurrency(currentPoolBudget)}`;
+            budgetProgressBar.classList.toggle('bg-red-500', percentageAllocated > 100);
+            budgetProgressBar.classList.toggle('bg-blue-600', percentageAllocated <= 100);
+        }
+
+        function handleApproval(id, approve) {
+            const colaborador = rankedColaboradores.find(c => c.id === id);
+            if (!colaborador) return;
+            const currentlyAllocated = rankedColaboradores.filter(c => c.approved).reduce((sum, c) => sum + (c.reajusteSugerido || 0), 0);
+            if (approve) {
+                if (currentlyAllocated + (colaborador.reajusteSugerido || 0) > currentPoolBudget) {
+                    toastMessage.textContent = 'Orçamento excedido! Não é possível aprovar este reajuste.';
+                    toastMessage.style.display = 'block';
+                    setTimeout(() => { toastMessage.style.display = 'none'; }, 4000);
+                    return;
+                }
+                colaborador.approved = true;
+                // --- LÓGICA DE LOG ADICIONADA ---
+                const logEntry = {
+                    colaboradorNome: colaborador.nome,
+                    valorAprovado: colaborador.reajusteSugerido,
+                    scoreNoMomento: colaborador.score,
+                    timestamp: new Date().toISOString()
+                };
+                decisionLog.unshift(logEntry); // Adiciona no início para mostrar os mais recentes primeiro
+                localStorage.setItem('reconheceAiDecisionLog', JSON.stringify(decisionLog));
+                // --- FIM DA LÓGICA DE LOG ---
+            } else {
+                colaborador.approved = false;
+            }
+            updateBudgetContext();
+            renderTable();
+            updateDashboard();
+            updateBiasAnalysis();
+        }
+
+        function distributeBudgetAndRender() {
+            // 1. PRIMEIRO, atualizamos o contexto do orçamento para garantir que 'currentPoolBudget' está com o valor mais recente.
+            updateBudgetContext();
+
+            // 2. AGORA, com o pool correto, calculamos e distribuímos o reajuste.
+            const totalScore = rankedColaboradores.reduce((sum, c) => sum + c.score, 0);
+            if (totalScore > 0) {
+                rankedColaboradores.forEach(c => { c.reajusteSugerido = (c.score / totalScore) * currentPoolBudget; });
+            }
+            
+            // Por fim, renderizamos a tabela com os valores corretos.
+            renderTable();
+        }
+
+        function renderTable() {
+            tableBody.innerHTML = '';
+            rankedColaboradores.forEach(c => {
+                const isApproved = c.approved || false;
+                const row = document.createElement('tr');
+                row.className = `border-b transition-colors duration-300 ${isApproved ? 'approved-row' : 'hover:bg-gray-50'}`;
+                const approvalButton = isApproved ? `<button data-id="${c.id}" class="approve-button text-xs bg-red-500 text-white font-semibold py-1 px-3 rounded-full hover:bg-red-600">Cancelar</button>` : `<button data-id="${c.id}" class="approve-button text-xs bg-green-500 text-white font-semibold py-1 px-3 rounded-full hover:bg-green-600">Aprovar</button>`;
+                row.innerHTML = `
+                    <td class="p-4">${c.nome}</td>
+                    <td class="p-4 text-center">${c.area}</td>
+                    <td class="p-4 text-center font-bold text-blue-700">${c.score.toFixed(1)}</td>
+                    <td class="p-4 text-center">
+                        <span class="px-3 py-1 text-xs font-semibold leading-tight rounded-full ${getIndicatorBadgeClasses(c.riscoPerdaTexto)}">
+                            ${c.riscoPerdaTexto}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <span class="px-3 py-1 text-xs font-semibold leading-tight rounded-full ${getIndicatorBadgeClasses(c.impactoPerdaTexto)}">
+                            ${c.impactoPerdaTexto}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center font-semibold text-green-600">${formatCurrency(c.reajusteSugerido || 0)}</td>
+                    <td class="p-4 text-center space-x-2">${approvalButton}<button data-id="${c.id}" class="justify-button text-xs bg-gray-500 text-white font-semibold py-1 px-3 rounded-full hover:bg-gray-600">Ver Ficha</button></td>
+                `;
+                tableBody.appendChild(row);
+            });
+            document.querySelectorAll('.justify-button').forEach(b => b.addEventListener('click', showJustification));
+            document.querySelectorAll('.approve-button').forEach(b => {
+                b.addEventListener('click', e => {
+                    const id = parseInt(e.target.dataset.id);
+                    const isApproved = rankedColaboradores.find(c => c.id === id)?.approved || false;
+                    handleApproval(id, !isApproved);
+                });
+            });
+        }
+
+        async function fetchInitialData() {
+            try {
+                const response = await fetch('http://localhost:7071/api/ranking');
+                if (!response.ok) throw new Error(`Erro na rede: ${response.statusText}`);
+                const data = await response.json();
+                rankedColaboradores = data.map(c => ({...c, approved: false}));
+                recalculateScoresAndRender();
+            } catch (error) {
+                console.error("Falha ao buscar ranking do backend:", error);
+                tableBody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-red-500">Não foi possível carregar os dados. O backend está rodando e o CORS está configurado?</td></tr>`;
+            }
+        }
+        
+        
+        function recalculateScoresAndRender() {
+            if (rankedColaboradores.length === 0) return;
+            rankedColaboradores.forEach(c => { c.score = calculateScore(c, currentWeights); });
+            rankedColaboradores.sort((a, b) => b.score - a.score);
+            distributeBudgetAndRender();
+            updateWeightsChart();
+            updateDashboard();
+        }
+        
+        function showJustification(event) {
+            const id = parseInt(event.target.dataset.id);
+            const c = rankedColaboradores.find(col => col.id === id);
+            if (!c) return;
+            
+            modalTitle.textContent = c.nome;
+            modalArea.textContent = c.area;
+            
+            modalDetails.innerHTML = `
+            <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-4">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-sm text-gray-500">💯 Score de Reconhecimento</p>
+                        <p class="text-3xl font-bold text-blue-600">${c.score.toFixed(1)}</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <div>
+                        <p class="text-sm text-gray-500">🛡️ Risco de Perda</p>
+                        <p class="font-bold text-lg ${getIndicatorClass(c.riscoPerdaTexto)}">${c.riscoPerdaTexto}</p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <div>
+                        <p class="text-sm text-gray-500">🎯 Impacto da Perda</p>
+                        <p class="font-bold text-lg ${getIndicatorClass(c.impactoPerdaTexto)}">${c.impactoPerdaTexto}</p>
+                    </div>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <div>
+                        <p class="text-sm text-gray-500">⭐ Desempenho</p>
+                        <p class="font-bold text-lg ${getIndicatorClass(c.desempenhoTexto)}">${c.desempenhoTexto}</p>
+                    </div>
+                </div>
+                ${c.isAbsenteismoAnomalo ? `
+                <div class="bg-red-50 p-3 rounded-lg border-l-4 border-red-500 mt-4">
+                    <div>
+                        <p class="text-sm font-bold text-red-800">⚠️ Alerta de Anomalia</p>
+                        <p class="text-sm text-red-700 mt-1">O absenteísmo deste colaborador apresentou um aumento repentino e estatisticamente incomum no último período.</p>
+                    </div>
+                </div>` : ''}
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <div>
+                        <p class="text-sm text-gray-500">💬 Feedback da Última Avaliação</p>
+                        <p class="text-base italic text-gray-700 mt-2">"${c.feedbackUltimaAvaliacao || 'N/A'}"</p>
+                        <p class="text-xs text-right mt-1">Pontuação de Risco (Sentimento): <strong>${c.scoreSentimento.toFixed(2)}</strong></p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4 mt-6">
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500">🏢 Tempo de Casa</p>
+                    <p class="text-xl font-semibold text-gray-800">${c.tempoDeCasa} anos</p>
+                </div>
+                <div class="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                    <p class="text-sm text-gray-500">👨‍💼 Tempo no Cargo</p>
+                    <p class="text-xl font-semibold text-gray-800">${c.tempoNoCargo} anos</p>
+                </div>
+            </div>
+        `;
+            
+            modalBody.innerHTML = '<p class="text-gray-500 italic">Clique em um dos botões "Analisar IA" para gerar um diagnóstico.</p>';
+            document.querySelectorAll('.analysis-button-new').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    generateAnalysis(e.currentTarget.dataset.type, id, e.currentTarget);
+                });
+            });
+            modal.style.display = 'flex';
+        }
+
+        async function generateAnalysis(analysisType, id, buttonElement) {
+            // Verifica se o elemento do botão foi passado
+            if (!id || !buttonElement) return;
+
+            // --- Lógica de feedback no botão ---
+            const originalButtonText = buttonElement.innerHTML; // Salva o texto original
+            buttonElement.disabled = true; // Desabilita o botão
+            buttonElement.innerHTML = `<div class="loader-small"></div>Analisando...`; // Adiciona o loader e novo texto
+
+            modalBody.innerHTML = `<p class="text-gray-500 italic animate-pulse">A IA está gerando a análise, por favor aguarde...</p>`;
+            // Garantimos que o loader global antigo não apareça
+            loaderContainer.style.display = 'none';
+
+            try {
+                const payload = { 
+                    colaboradorId: id, 
+                    analysisType: analysisType,
+                    weights: currentWeights
+                };
+                const response = await fetch('http://localhost:7071/api/analyse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro do servidor: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                modalBody.innerHTML = result.analise;
+
+            } catch (error) {
+                console.error("Erro ao gerar análise:", error);
+                modalBody.innerHTML = `<div class="bg-red-50 border-l-4 border-red-400 p-4 rounded"><p class="font-bold text-red-800">Ocorreu um Erro</p><p class="text-red-700">Não foi possível gerar a análise. Verifique a consola para mais detalhes ou tente novamente.</p></div>`;
+            } finally {
+                // --- Restaura o botão ao estado original ---
+                // Isso acontece sempre, com sucesso ou erro.
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalButtonText;
+            }
+        }
+        
+        function createWeightControls() {
+            const labels = { desempenho: 'Desempenho', impactoPerda: 'Impacto da Perda', riscoPerda: 'Risco de Perda', tempoCargo: 'Tempo no Cargo', tempoCasa: 'Tempo de Casa', absenteismo: 'Assiduidade', sentimento: 'Sentimento do Feedback' };
+            weightsControlsContainer.innerHTML = '';
+            Object.keys(currentWeights).forEach(key => {
+                const valueId = `weight-value-${key}`;
+                // Adiciona o HTML do controle diretamente ao container
+                weightsControlsContainer.innerHTML += `
+                    <div>
+                        <label for="weight-slider-${key}" class="block font-medium text-gray-700">${labels[key]}: <span id="${valueId}" class="font-bold text-blue-700">${currentWeights[key]}%</span></label>
+                        <input id="weight-slider-${key}" data-key="${key}" type="range" min="0" max="50" value="${currentWeights[key]}" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer weight-slider mt-1">
+                    </div>
+                `;
+            });
+            
+            // Adiciona os event listeners depois de criar todos os elementos
+            document.querySelectorAll('.weight-slider').forEach(slider => {
+                slider.addEventListener('input', (e) => {
+                    const key = e.target.dataset.key;
+                    const newValue = parseInt(e.target.value);
+                    currentWeights[key] = newValue;
+                    document.getElementById(`weight-value-${key}`).textContent = `${newValue}%`;
+                    recalculateScoresAndRender();
+                });
+            });
+        }
+        function applyPreset(presetName) {
+            const presets = {
+            equilibrado: { desempenho: 30, impactoPerda: 20, riscoPerda: 15, tempoCargo: 10, tempoCasa: 10, absenteismo: 5, sentimento: 10 },
+            retencao:    { desempenho: 15, impactoPerda: 30, riscoPerda: 25, tempoCargo: 5,  tempoCasa: 5,  absenteismo: 5, sentimento: 15 },
+            meritocracia:{ desempenho: 50, impactoPerda: 10, riscoPerda: 5,  tempoCargo: 10, tempoCasa: 5,  absenteismo: 5, sentimento: 10 }
+        };
+
+            const newWeights = presets[presetName];
+            if (!newWeights) return;
+
+            currentWeights = { ...newWeights };
+
+            // Atualiza a interface dos sliders e os valores de porcentagem
+            Object.keys(currentWeights).forEach(key => {
+                const slider = document.getElementById(`weight-slider-${key}`);
+                const valueDisplay = document.getElementById(`weight-value-${key}`);
+                if (slider) slider.value = currentWeights[key];
+                if (valueDisplay) valueDisplay.textContent = `${currentWeights[key]}%`;
+            });
+
+            // Recalcula todos os scores e atualiza a tabela com os novos pesos
+            recalculateScoresAndRender();
+
+            // Lógica para destacar o botão ativo
+            document.querySelectorAll('.preset-button').forEach(btn => {
+                btn.classList.remove('bg-blue-500', 'text-white');
+                btn.classList.add('bg-gray-200', 'text-gray-700');
+            });
+            const activeButton = document.getElementById(`preset-${presetName}`);
+            activeButton.classList.add('bg-blue-500', 'text-white');
+            activeButton.classList.remove('bg-gray-200', 'text-gray-700');
+        }
+        function updateWeightsChart() {
+            if (!weightsChart) return;
+            const totalWeights = Object.values(currentWeights).reduce((a, b) => a + b, 0);
+            const data = Object.values(currentWeights).map(w => totalWeights > 0 ? (w / totalWeights) * 100 : 0);
+            weightsChart.data.datasets[0].data = data;
+            weightsChart.update();
+        }
+
+        function showAuditLog() {
+            const logBody = document.getElementById('audit-log-body');
+            const emptyMessage = document.getElementById('empty-log-message');
+            const modal = document.getElementById('audit-log-modal');
+            
+            logBody.innerHTML = ''; // Limpa o conteúdo anterior
+
+            if (decisionLog.length === 0) {
+                emptyMessage.classList.remove('hidden');
+            } else {
+                emptyMessage.classList.add('hidden');
+                decisionLog.forEach(entry => {
+                    const row = document.createElement('tr');
+                    row.className = 'border-b';
+                    const formattedDate = new Date(entry.timestamp).toLocaleString('pt-BR');
+                    const formattedValue = formatCurrency(entry.valorAprovado);
+
+                    row.innerHTML = `
+                        <td class="p-3 text-sm text-gray-600">${formattedDate}</td>
+                        <td class="p-3 font-medium">${entry.colaboradorNome}</td>
+                        <td class="p-3 text-green-600 font-semibold">${formattedValue}</td>
+                        <td class="p-3 text-blue-600 font-bold">${entry.scoreNoMomento.toFixed(1)}</td>
+                    `;
+                    logBody.appendChild(row);
+                });
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function initializeChart() {
+            if (!weightsChartCtx) return;
+
+            // 1. CORREÇÃO: Adicionamos a nova legenda 'Sentimento'
+            const labels = ['Desempenho', 'Impacto Perda', 'Risco Perda', 'Tempo Cargo', 'Tempo Casa', 'Assiduidade', 'Sentimento'];
+            
+            const data = { 
+                labels: labels, 
+                datasets: [{ 
+                    label: 'Composição do Score', 
+                    data: Object.values(currentWeights), 
+                    // 2. CORREÇÃO: Adicionamos uma nova cor para o sétimo item
+                    backgroundColor: ['#2563EB', '#3B82F6', '#60A5FA', '#93C5FD', '#BFDBFE', '#DBEAFE', '#6EE7B7'], 
+                    borderColor: '#FFFFFF', 
+                    borderWidth: 2, 
+                    hoverOffset: 4 
+                }]
+            };
+
+            weightsChart = new Chart(weightsChartCtx, { 
+                type: 'doughnut', 
+                data: data, 
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    plugins: { 
+                        legend: { display: false }, 
+                        tooltip: { 
+                            callbacks: { 
+                                label: (c) => `${c.label}: ${c.parsed.toFixed(1)}%` 
+                            } 
+                        } 
+                    }, 
+                    cutout: '60%' 
+                }
+            });
+        }
+
+        function calculateScore(c, weights) {
+            if (!rankedColaboradores || rankedColaboradores.length === 0) return 0;
+            const maxTempoCasa = Math.max(...rankedColaboradores.map(i => i.tempoDeCasa), 1);
+            const maxTempoCargo = Math.max(...rankedColaboradores.map(i => i.tempoNoCargo), 1);
+            const converterTextoParaNumero = (tipo, texto) => {
+                if (!texto) return 0.0;
+                const map = { risco: { "alto": 1.0, "médio": 0.5, "baixo": 0.1 }, impacto: { "estratégico": 1.0, "alto": 1.0, "crítico": 1.0, "médio": 0.5, "moderado": 0.5, "baixo": 0.1 }, desempenho: { "excepcional": 1.0, "acima do esperado": 0.8, "excelente": 0.9, "bom": 0.75, "regular": 0.6, "abaixo do esperado": 0.3 }};
+                return map[tipo]?.[texto.toLowerCase()] || 0.0;
+            };
+            const normalize = (value, max) => (max > 0 ? (value / max) : 0);
+            const totalWeights = Object.values(weights).reduce((a, b) => a + b, 0);
+            if (totalWeights === 0) return 0;
+            let scoreBase = (converterTextoParaNumero('desempenho', c.desempenhoTexto) * (weights.desempenho / totalWeights)) + (normalize(c.tempoNoCargo, maxTempoCargo) * (weights.tempoCargo / totalWeights)) + (normalize(c.tempoDeCasa, maxTempoCasa) * (weights.tempoCasa / totalWeights)) + (converterTextoParaNumero('risco', c.riscoPerdaTexto) * (weights.riscoPerda / totalWeights)) + (converterTextoParaNumero('impacto', c.impactoPerdaTexto) * (weights.impactoPerda / totalWeights)) + ((1 - c.absenteismo) * (weights.absenteismo / totalWeights)) + (c.scoreSentimento * (weights.sentimento / totalWeights));
+            let penalidadePercentual = Math.min(c.advertencias * 0.10, 0.30);
+            return Math.round((scoreBase * (1 - penalidadePercentual)) * 500);
+        }
+        async function generateAnalysis(analysisType, id, buttonElement) {
+            // Verifica se o elemento do botão foi passado
+            if (!id || !buttonElement) return;
+
+            // --- Lógica de feedback no botão ---
+            const originalButtonText = buttonElement.innerHTML; // Salva o texto original
+            buttonElement.disabled = true; // Desabilita o botão
+            buttonElement.innerHTML = `<div class="loader-small"></div>Analisando...`; // Adiciona o loader e novo texto
+
+            // --- Lógica de feedback no corpo do modal ---
+            // Em vez de esconder tudo, mostramos uma mensagem sutil
+            modalBody.innerHTML = `<p class="text-gray-500 italic animate-pulse">A IA está gerando a análise, por favor aguarde...</p>`;
+            // Garantimos que o loader global antigo não apareça
+            loaderContainer.style.display = 'none';
+
+            try {
+                const payload = { 
+                    colaboradorId: id, 
+                    analysisType: analysisType,
+                    weights: currentWeights
+                };
+                const response = await fetch('http://localhost:7071/api/analyse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Erro do servidor: ${response.status} - ${errorText}`);
+                }
+
+                const result = await response.json();
+                modalBody.innerHTML = result.analise;
+
+            } catch (error) {
+                console.error("Erro ao gerar análise:", error);
+                modalBody.innerHTML = `<div class="bg-red-50 border-l-4 border-red-400 p-4 rounded"><p class="font-bold text-red-800">Ocorreu um Erro</p><p class="text-red-700">Não foi possível gerar a análise. Verifique a consola para mais detalhes ou tente novamente.</p></div>`;
+            } finally {
+                // --- Restaura o botão ao estado original ---
+                // Isso acontece sempre, com sucesso ou erro.
+                buttonElement.disabled = false;
+                buttonElement.innerHTML = originalButtonText;
+            }
+        }
+        // --- INICIALIZAÇÃO E EVENTOS ---
+        loadStateFromLocalStorage();
+        poolPercentageSlider.addEventListener('input', e => {
+            poolPercentage = parseInt(e.target.value);
+            poolPercentageValue.textContent = `${poolPercentage}%`;
+            recalculateScoresAndRender();
+        });
+        totalAreaBudgetInput.addEventListener('input', e => {
+            let cleanValue = e.target.value.replace(/\D/g, '');
+            if(cleanValue.length > 12) cleanValue = cleanValue.substring(0, 12);
+            totalAreaBudget = cleanValue ? parseInt(cleanValue, 10) : 0;
+            e.target.value = totalAreaBudget.toLocaleString('pt-BR');
+            recalculateScoresAndRender();
+            saveStateToLocalStorage();
+        });
+        totalAreaBudgetInput.addEventListener('blur', e => { e.target.value = formatCurrency(totalAreaBudget); });
+        
+        modalCloseButton.addEventListener('click', () => modal.style.display = 'none');
+        modalCloseXButton.addEventListener('click', () => modal.style.display = 'none');
+        exportCsvButton.addEventListener('click', () => {
+        // Filtra apenas os colaboradores que foram aprovados
+        const approvedColaboradores = rankedColaboradores.filter(c => c.approved);
+        
+        // 1. CABEÇALHO ATUALIZADO: Adicionamos as novas colunas
+        const rowsToExport = [
+            ["Nome", "Area", "Score", "Risco_de_Perda", "Impacto_da_Perda", "Reajuste_Aprovado_RS"]
+        ];
+
+        // Adiciona os dados de cada colaborador aprovado
+        approvedColaboradores.forEach(c => {
+            rowsToExport.push([
+                c.nome,
+                c.area,
+                c.score.toFixed(1),
+                // 2. DADOS ADICIONAIS: Incluímos os textos de risco e impacto
+                c.riscoPerdaTexto, 
+                c.impactoPerdaTexto,
+                // 3. BUG CORRIGIDO: O valor é formatado e envolvido em aspas duplas
+                `"${(c.reajusteSugerido || 0).toFixed(2).replace('.', ',')}"`
+            ]);
+        });
+    
+    // Chama a função para exportar o arquivo
+    exportToCsv('aprovacoes_reconheceai.csv', rowsToExport);
+});
+
+// Adiciona os eventos para os novos botões de preset
+document.getElementById('preset-equilibrado').addEventListener('click', () => applyPreset('equilibrado'));
+document.getElementById('preset-retencao').addEventListener('click', () => applyPreset('retencao'));
+document.getElementById('preset-meritocracia').addEventListener('click', () => applyPreset('meritocracia'));
+const showLogButton = document.getElementById('show-log-button');
+const auditModalCloseButton = document.getElementById('audit-modal-close-button');
+const auditLogModal = document.getElementById('audit-log-modal');
+
+showLogButton.addEventListener('click', showAuditLog);
+auditModalCloseButton.addEventListener('click', () => {
+    auditLogModal.style.display = 'none';
+});
+        // --- Carga Inicial Estruturada ---
+        const savedLog = localStorage.getItem('reconheceAiDecisionLog');
+        if (savedLog) {
+            decisionLog = JSON.parse(savedLog);
+        }
+        loadStateFromLocalStorage();
+        createWeightControls();
+        initializeChart();
+        initializeBudgetChart();
+        initializeRiskChart();
+        totalAreaBudgetInput.value = formatCurrency(totalAreaBudget);
+        applyPreset('equilibrado');
+        fetchInitialData();
+    });
+    </script>
+    <div id="audit-log-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <div class="p-6 border-b flex justify-between items-center">
+                <h3 class="text-2xl font-bold text-gray-800">Histórico de Decisões</h3>
+                <button id="audit-modal-close-button" class="text-gray-400 hover:text-gray-600 text-2xl font-bold z-10">&times;</button>
+            </div>
+            <div class="flex-grow overflow-y-auto p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-3 font-semibold text-sm">Data</th>
+                                <th class="p-3 font-semibold text-sm">Colaborador</th>
+                                <th class="p-3 font-semibold text-sm">Valor Aprovado</th>
+                                <th class="p-3 font-semibold text-sm">Score (no momento)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="audit-log-body">
+                            </tbody>
+                    </table>
+                </div>
+                <p id="empty-log-message" class="hidden text-center text-gray-500 mt-8">Nenhuma decisão foi registrada ainda.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
